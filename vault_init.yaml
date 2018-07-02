@@ -1,0 +1,27 @@
+---
+- hosts: tag_Role_vault
+  gather_facts: yes
+  tasks:
+
+    - service: name=vault state=restarted
+
+    - vault_init:
+      run_once: yes
+
+    - vault_unseal: key="{{ item }}"
+      with_items: "{{ vault_init.vault_keys }}"
+
+    - vault_secret: mode=write path=sys/license var=text val={{ vault_license }} vault_token={{ vault_init.root_token }}
+      when: vault_license is defined
+
+    - debug: msg="Vault Keys {{ vault_init.vault_keys | join('\n') }}"
+      run_once: true
+
+    - debug: msg="Root Token {{ vault_init.root_token }}"
+      run_once: true
+
+    - vault_status:
+      run_once: true
+
+    - debug: msg="{{ vault_status }}"
+      run_once: true
