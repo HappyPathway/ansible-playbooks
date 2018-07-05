@@ -1,0 +1,66 @@
+#!/usr/bin/env python
+import consul
+import json
+from glob import glob
+import os
+
+
+def main():
+
+	# since we should allow False as a value for a key, we will set a random string
+    # if the output of module.params.get("value") == random_string,
+    # then we know we didn't pass a value
+    rand_str = "AoCFb2Da5hMmmvemkMmS" 
+
+    module = AnsibleModule(
+        argument_spec = dict(
+            dc     = dict(required=True),
+            host   = dict(required=True),
+            token  = dict(required=True),
+            scheme = dict(default="https"),
+            verify = dict(default=False, type='bool'),
+            key    = dict(required=True),
+            value  = dict(required=False),
+            mode = dict(required=False, default="get")
+        )
+    )
+    _host   = module.params.get("host")
+    _dc     = module.params.get("dc")
+    _token  = module.params.get("token")
+    _scheme = module.params.get("scheme")
+    _verify = module.params.get("verify")
+    _key    = module.params.get("key")
+    _value  = module.params.get("value", rand_str)
+    _mode   = module.params.get("mode")
+
+    # connect to consul
+    c = consul.Consul(host=_host, token=_token, scheme=_scheme, verify=_verify, dc=_dc)
+    if _mode in ["get","set"]:
+        if _value:
+    	    try:
+    		    c.kv.put(_key, _value, dc=_dc)
+    		    module.exit_json(changed=True, key=_key, value=_value, success=True)
+
+    	    except Exception, e:
+    		    module.fail_json(changed=False, key=_key, value=_value, success=False, msg="Can not set Key: {0}".format(str(e)))
+
+        else:
+            try:
+                data = c.kv.get(_key)
+                d = dict()
+                _value = data[1].get("Value")
+                try:
+                    _value = json.loads(_value)
+                except:
+                    pass
+                d[_key] = _value
+                module.exit_json(changed=False, key=_key, value=_value, sucess=True, **d)
+
+    	    except Exception, e:
+    		    module.fail_json(changed=False, key=None, value=_value, success=False, msg="Can not retrieve Value: {0}".format(str(e)))
+    elif _mode == "delete":
+        c.kv.delete(_key)
+        
+from ansible.module_utils.basic import AnsibleModule
+if __name__ == '__main__':
+	main()

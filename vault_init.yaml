@@ -3,7 +3,13 @@
   gather_facts: yes
   tasks:
 
+    - vault_config: config_dir=/etc/vault.d
+    
     - service: name=vault state=restarted
+  
+    - wait_for:
+        port: 8301
+        delay: 10
 
     - vault_init:
       run_once: yes
