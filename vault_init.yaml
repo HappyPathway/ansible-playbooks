@@ -1,10 +1,10 @@
 ---
-- hosts: tag_Role_vault
-  gather_facts: yes
+- hosts: all
+  gather_facts: no
+  become: yes
+  serial: 3
   tasks:
 
-    - vault_config: config_dir=/etc/vault.d
-    
     - service: name=vault state=restarted
   
     - wait_for:

@@ -1,0 +1,31 @@
+---
+- hosts: all
+  tasks:
+    - name: Setup Vault SSH
+      delegate_to: localhost
+      shell: vault secrets enable -path={{ ssh_mount }} ssh
+
+    # vault write ssh-client-signer/config/ca generate_signing_key=true
+    - name: Configure SSH Key
+      delegate_to: localhost
+      vault_secret:  path={{ ssh_mount }}/config/ca mode=write value=true var=generate_signing_key
+
+    # vault read -field=public_key ssh-client-signer/config/ca
+    - name: Grab New Signed Public key
+      delegate_to: localhost
+      vault_fact: path={{ ssh_mount }}/config/ca fact=vault_ssh_key
+
+    - name: Transfer SSH Key to new host
+      copy: content="{{ vault_ssh_key.public_key }}" dest=/etc/ssh/trusted-user-ca-keys.pem
+      notifies: restart sshd
+      become: yes
+
+    - name: upload sshd config
+      copy: src=files/sshd_config dest=/etc/ssh/sshd_config
+      notifies: resrart sshd
+      become: yes
+
+  handlers:
+    - name: restart sshd
+      service: name=ssh state=restarted
+      become: yes
