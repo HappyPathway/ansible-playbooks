@@ -58,7 +58,7 @@ def main():
                 vault_response.pop("data")
             module.exit_json(changed=True, ansible_facts=dict(vault_ssh=vault_response))
     except VaultSSHException, e:
-        module.fail_json(reason=str(e))
+        module.fail_json(msg=str(e))
 
 
 from ansible.module_utils.basic import AnsibleModule
