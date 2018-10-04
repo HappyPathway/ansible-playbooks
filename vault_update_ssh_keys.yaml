@@ -1,0 +1,11 @@
+- hosts: localhost
+  gather_facts: no
+  become: no
+  tasks:
+    - name: update SSH Keys
+      delegate_to: localhost
+      vault_ssh_sign_key: 
+        key_path:  "{{ lookup('env', 'HOME') }}/.ssh/id_rsa.pub"
+        ssh_mount: ssh-production
+        ssh_profile: root 
+        signed_key_path: "{{ lookup('env', 'HOME') }}/.ssh/id_rsa-cert.pub"

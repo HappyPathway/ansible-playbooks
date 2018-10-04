@@ -1,0 +1,50 @@
+---
+- hosts: all
+  tasks: 
+    - name: install python 2
+      become: yes
+      raw: test -e /usr/bin/python || (apt -y update && apt install -y python python-dev)
+
+    - name: get github deployment key
+      vault_secret: path=secret/deployKeys var=SimpleApp
+      delegate_to: localhost
+      register: deploy_key
+
+    - name: Setup Deploy Key
+      copy: dest="{{ ansible_env.HOME }}/.ssh/github" content="{{ deploy_key.SimpleApp }}"
+
+    - name: fix key permissions
+      file: path="{{ ansible_env.HOME }}/.ssh/github" mode=0600
+
+    - name: git clone
+      git: 
+        accept_hostkey: yes 
+        dest: "{{ ansible_env.HOME }}/simple-app" 
+        repo: git@github.com:HappyPathway/SimpleApp.git
+        key_file: "{{ ansible_env.HOME }}/.ssh/github"
+
+    - name: get-pip.py
+      become: yes
+      shell: curl https://bootstrap.pypa.io/get-pip.py | python
+
+    - name: install supervisor
+      apt: name=supervisor state=installed
+
+    - name: create /opt/app
+      file: path=/opt/app state=directory
+
+    - name: copy calculator config into place
+      copy: remote_src=True src="{{ ansible_env.HOME }}/simple-app/conf/calculator.conf" dest=/etc/supervisor/conf.d/calculator.conf
+      notify: restart supervisor
+
+    - name: copy calculator script into place
+      copy: remote_src=True src="{{ ansible_env.HOME }}/simple-app/calculator.py" dest=/opt/app/calculator.py
+      notify: restart supervisor
+
+    - name: install requirements
+      pip: executable=/usr/local/bin/pip requirements="{{ ansible_env.HOME }}/simple-app/requirements.txt"
+      notify: restart supervisor
+
+  handlers:
+    - name: restart supervisor
+      service: name=supervisor state=restarted
