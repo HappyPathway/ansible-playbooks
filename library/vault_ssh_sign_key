@@ -2,12 +2,6 @@
 import hvac
 import os
 
-client = hvac.Client(url=os.environ.get('VAULT_ADDR'), token=os.environ.get('VAULT_TOKEN'))
-with open("/Users/davearnold/.ssh/id_rsa.pub", "r") as key_data_file:
-    key_data = key_data_file.read()
-
-client.write("ssh-production/sign/root", public_key=key_data).get("data").get("signed_key")
-
 class VaultSSHException(Exception): pass
 
 def main():
