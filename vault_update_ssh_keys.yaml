@@ -7,11 +7,11 @@
       register: pub_key_path
 
     - name: create .ssh directory
-      file: path="{{ lookup('env', 'HOME') }}/.ssh mode=0700 state=directory
+      file: path="{{ lookup('env', 'HOME') }}/.ssh" mode=0700 state=directory
       when: not pub_key_path.stat.exists
 
     - name: generate ssh key
-      command : ssh-keygen -q -t rsa -f "{{ lookup('env', 'HOME') }}/.ssh/id_rsa -C "" -N ""
+      command : ssh-keygen -q -t rsa -f {{ lookup('env', 'HOME') }}/.ssh/id_rsa -C "" -N ""
       creates: "{{ lookup('env', 'HOME') }}/.ssh/id_rsa.pub"
       when: not pub_key_path.stat.exists
 
