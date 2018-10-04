@@ -2,6 +2,19 @@
   gather_facts: no
   become: no
   tasks:
+    - name: stat public key
+      stat: path="{{ lookup('env', 'HOME') }}/.ssh/id_rsa.pub"
+      register: pub_key_path
+
+    - name: create .ssh directory
+      file: path="{{ lookup('env', 'HOME') }}/.ssh mode=0700
+      when: not pub_key_path.stat.exists
+
+    - name: generate ssh key
+      command : ssh-keygen -q -t rsa -f "{{ lookup('env', 'HOME') }}/.ssh/id_rsa -C "" -N ""
+      creates: "{{ lookup('env', 'HOME') }}/.ssh/id_rsa.pub"
+      when: not pub_key_path.stat.exists
+      
     - name: update SSH Keys
       delegate_to: localhost
       vault_ssh_sign_key: 
