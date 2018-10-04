@@ -10,6 +10,10 @@
       file: path="{{ lookup('env', 'HOME') }}/.ssh" mode=0700 state=directory
       when: not pub_key_path.stat.exists
 
+    - name: destroy id_rsa key
+      file: path={{ lookup('env', 'HOME') }}/.ssh/id_rsa state=absent
+      when: not pub_key_path.stat.exists
+      
     - name: generate ssh key
       command : ssh-keygen -q -t rsa -f {{ lookup('env', 'HOME') }}/.ssh/id_rsa -C "" -N ""
       creates: "{{ lookup('env', 'HOME') }}/.ssh/id_rsa.pub"
