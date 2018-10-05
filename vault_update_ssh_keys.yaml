@@ -20,7 +20,6 @@
       when: not pub_key_path.stat.exists
 
     - name: update SSH Keys
-      delegate_to: localhost
       vault_ssh_sign_key: 
         key_path:  "{{ lookup('env', 'HOME') }}/.ssh/id_rsa.pub"
         ssh_mount: ssh-production
